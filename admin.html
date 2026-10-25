@@ -1,0 +1,1344 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EndoDiag — Back-office enseignant</title>
+<style>
+  :root{
+    --ink:#1c2b2a; --muted:#5c6f6d; --bg:#f4f8f7; --card:#ffffff; --border:#dfe9e7;
+    --shadow:0 2px 10px rgba(15,60,55,0.08);
+    --logo-navy:#182849; --logo-blue:#3f66d8; --logo-blue-dark:#2c4bb0; --logo-blue-100:#e7ecfb;
+    --teal-100:#e6f7f5; --teal-700:#0d6e64; --ok:#0f9488; --ko:#b91c1c;
+    --warn:#d97706; --warn-100:#fef3c7; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;
+  }
+  .wrap{max-width:1060px; margin:0 auto; padding:24px 16px 64px;}
+  header{text-align:center; padding:16px 0 8px;}
+  header h1{margin:0; font-size:1.7rem; font-weight:800; letter-spacing:-0.01em;}
+  header h1 .n{color:var(--logo-navy);} header h1 .b{color:var(--logo-blue);}
+  header h1 .logo-o{width:auto; height:0.86em; vertical-align:-0.16em; display:inline-block; margin:0 0.02em;}
+  header .sub{margin:4px 0 0; font-size:0.9rem; color:var(--muted);}
+
+  .card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; margin-top:18px;}
+  .card h2{margin:0 0 4px; font-size:1.1rem; color:var(--logo-navy);}
+  .card .hint{margin:0 0 14px; font-size:0.84rem; color:var(--muted);}
+
+  .btn{
+    border:1.5px solid var(--logo-navy); background:var(--card); color:var(--logo-navy);
+    border-radius:999px; padding:8px 15px; font-family:inherit; font-size:0.82rem;
+    font-weight:700; cursor:pointer;
+  }
+  .btn:hover{background:var(--logo-blue-100);}
+  .btn:disabled{opacity:0.5; cursor:not-allowed;}
+  .btn-ok{border-color:var(--ok); color:var(--ok);}
+  .btn-ok:hover{background:var(--teal-100);}
+  .btn-ko{border-color:var(--ko); color:var(--ko);}
+  .btn-ko:hover{background:rgba(185,28,28,0.08);}
+  .btn-solid{background:var(--logo-navy); color:#fff;}
+  .btn-solid:hover{background:var(--logo-blue-dark); border-color:var(--logo-blue-dark);}
+
+  table{width:100%; border-collapse:collapse; font-size:0.86rem;}
+  th{
+    text-align:left; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em;
+    color:var(--muted); padding:8px 10px; border-bottom:2px solid var(--border); white-space:nowrap;
+  }
+  td{padding:10px; border-bottom:1px solid var(--border); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .tbl-wrap{overflow-x:auto;}
+  .actions{display:flex; gap:7px; white-space:nowrap;}
+
+  .toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:0 0 14px;}
+  .toolbar label{font-size:0.82rem; font-weight:700; color:var(--logo-navy);}
+  .toolbar select{
+    border:1.5px solid var(--border); border-radius:9px; padding:7px 11px;
+    font-family:inherit; font-size:0.84rem; background:var(--card); color:inherit;
+  }
+  .toolbar .grow{flex:1 1 auto;}
+
+  .tag{display:inline-block; padding:2px 9px; border-radius:999px; font-size:0.72rem; font-weight:700;}
+  .tag-wait{background:var(--warn-100); color:var(--warn);}
+  .tag-ok{background:var(--teal-100); color:var(--teal-700);}
+  /* « .tag » ne donne que la forme ; sans couleur de fond, « raté » passait pour du texte ordinaire
+     à côté de la pastille verte de « réussi », et la lecture en diagonale ne distinguait plus rien. */
+  .tag-ko{background:rgba(185,28,28,0.10); color:var(--ko);}
+
+  .empty{padding:26px 10px; text-align:center; color:var(--muted); font-size:0.88rem;}
+  .msg{padding:11px 13px; border-radius:9px; font-size:0.86rem; margin-bottom:14px;}
+  .msg.err{background:rgba(185,28,28,0.09); color:var(--ko);}
+  .msg.ok{background:var(--teal-100); color:var(--teal-700);}
+  .msg.info{background:var(--logo-blue-100); color:var(--logo-blue-dark);}
+
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px;}
+  .stat{background:var(--bg); border-radius:11px; padding:13px 15px;}
+  .stat .v{font-size:1.5rem; font-weight:800; color:var(--logo-navy); line-height:1.2;}
+  .stat .l{font-size:0.76rem; color:var(--muted); margin-top:2px;}
+
+  .bar{height:7px; background:var(--border); border-radius:4px; overflow:hidden; min-width:70px;}
+  .bar i{display:block; height:100%; background:var(--ko);}
+
+  .login-box{max-width:400px; margin:8vh auto 0;}
+  .field{margin-bottom:13px;}
+  .field label{display:block; font-size:0.78rem; font-weight:700; margin-bottom:5px;}
+  .field input{
+    width:100%; padding:10px 11px; border:1px solid var(--border);
+    border-radius:9px; font-family:inherit; font-size:0.92rem;
+  }
+  .hidden{display:none !important;}
+  .back{display:inline-block; margin-bottom:6px; font-size:0.82rem; color:var(--logo-blue); text-decoration:none;}
+  .back:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span class="n">End</span><svg class="logo-o" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="o (dent stylisée)">
+      <circle cx="50" cy="50" r="46" fill="none" stroke="#182849" stroke-width="5"/>
+      <path d="M35,32 Q38,22 46,26 Q50,30 54,26 Q62,22 65,32 Q70,40 66,52 Q66,60 64,70 Q62,80 58,84 Q55,87 54,80 Q53,68 50,62 Q47,68 46,80 Q45,87 42,84 Q38,80 36,70 Q34,60 34,52 Q30,40 35,32 Z" fill="none" stroke="#182849" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <path d="M45,29 Q50,35 55,29 M50,33 L50,60 M50,60 Q52,67 54,77 M50,60 Q48,67 46,77" fill="none" stroke="#e8532e" stroke-width="4.5" stroke-linecap="round"/>
+    </svg><span class="b">Diag</span></h1>
+    <p class="sub">Back-office enseignant</p>
+  </header>
+
+  <!-- Connexion -->
+  <div id="login-view" class="card login-box hidden">
+    <h2>Connexion enseignante</h2>
+    <p class="hint">Accès réservé aux comptes administrateurs.</p>
+    <div class="field">
+      <label for="email">Adresse e-mail</label>
+      <input type="email" id="email" autocomplete="email">
+    </div>
+    <div class="field">
+      <label for="password">Mot de passe</label>
+      <input type="password" id="password" autocomplete="current-password">
+    </div>
+    <button class="btn btn-solid" id="login-btn" style="width:100%;">Se connecter</button>
+    <div id="login-msg" style="margin-top:13px;"></div>
+    <p style="margin-top:16px; text-align:center;"><a class="back" href="index.html">← Retour à l'application</a></p>
+  </div>
+
+  <!-- Chargement -->
+  <div id="loading-view" class="card"><div class="empty">Chargement…</div></div>
+
+  <!-- Back-office -->
+  <div id="admin-view" class="hidden">
+    <a class="back" href="index.html">← Retour à l'application</a>
+    <div id="global-msg"></div>
+
+    <div class="card">
+      <h2>Vue d'ensemble</h2>
+      <p class="hint">Chiffres de la promotion, mis à jour à chaque chargement.
+        Les comptes enseignants n'y entrent pas : seuls les étudiants sont comptés.</p>
+      <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="card">
+      <h2>Comptes en attente de validation <span id="pending-count"></span></h2>
+      <p class="hint">Tant qu'un compte n'est pas validé, l'étudiant ne peut pas accéder aux cas cliniques.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr>
+          <th>Nom</th><th>Année</th><th>Faculté</th><th>E-mail</th><th>Inscrit le</th><th></th>
+        </tr></thead>
+        <tbody id="pending-body"></tbody>
+      </table></div>
+    </div>
+
+    <div class="card">
+      <h2>Comptes validés <span id="approved-count"></span></h2>
+      <p class="hint">Cliquez sur un étudiant pour consulter ses résultats.
+        « ⊘ Hors stats » retire un compte des chiffres sans rien effacer — c'est ce qu'il faut
+        pour un compte d'essai.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr>
+          <th>Nom</th><th>Année</th><th>Faculté</th><th>Dernière connexion</th><th>Séries</th>
+          <th>Cas joués<br><span style="font-weight:400;font-size:0.74rem;color:var(--muted)">par mode, et taux de réussite</span></th>
+          <th>Moyenne</th><th></th>
+        </tr></thead>
+        <tbody id="approved-body"></tbody>
+      </table></div>
+      <p class="hint" id="staff-note" style="margin-top:10px;"></p>
+    </div>
+
+    <!-- Les comptes sortis des chiffres. Cette carte n'existe que pour qu'ils ne disparaissent
+         pas SANS TRACE : un compte invisible qu'on ne pourrait plus remettre serait pire que le
+         problème qu'on vient de corriger. -->
+    <div class="card hidden" id="hors-stats-card">
+      <h2>Comptes hors statistiques <span id="hors-stats-count"></span></h2>
+      <p class="hint">Ni leurs séries ni leurs cas joués n'entrent dans les chiffres de cet écran
+        ou du classeur. Rien n'est effacé : remis dans les statistiques, tout leur passé réapparaît.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr>
+          <th>Nom</th><th>Année</th><th>Dernière connexion</th><th>Pourquoi</th><th></th>
+        </tr></thead>
+        <tbody id="hors-stats-body"></tbody>
+      </table></div>
+    </div>
+
+    <div class="card" id="detail-card" style="display:none;">
+      <h2 id="detail-title"></h2>
+      <p class="hint">Détail des séries terminées, de la plus récente à la plus ancienne.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Date</th><th>Mode</th><th>Score</th></tr></thead>
+        <tbody id="detail-body"></tbody>
+      </table></div>
+
+      <h3 style="margin:22px 0 4px;font-size:1rem;">Cas joués <span id="detail-cases-count"></span></h3>
+      <p class="hint">Chaque cas validé, série notée ou cas isolé, du plus récent au plus ancien.
+        C'est ici qu'apparaît le travail d'un étudiant qui s'entraîne sans terminer de série.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Date</th><th>Mode</th><th>Pathologie ou cliché</th><th>Résultat</th></tr></thead>
+        <tbody id="detail-cases-body"></tbody>
+      </table></div>
+    </div>
+
+    <div class="card">
+      <h2>Pathologies les plus ratées</h2>
+      <p class="hint">Choisissez une promotion pour voir ce qui mérite d'être repris en cours avec elle.
+        L'export produit un classeur de quatre feuilles — synthèse, étudiants, le détail de
+        chaque cas joué, et le bilan pathologie par pathologie pour chaque promotion.</p>
+      <div class="toolbar">
+        <label for="promo-filter">Promotion</label>
+        <select id="promo-filter"></select>
+        <span class="grow"></span>
+        <button class="btn btn-solid" id="export-btn" type="button">⬇ Exporter tout (Excel)</button>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr>
+          <th>Pathologie</th><th>Cas traités</th><th>Erreurs · diagnostic</th>
+          <th>Erreurs · traitement</th><th>Taux global</th><th style="width:22%"></th>
+        </tr></thead>
+        <tbody id="weak-body"></tbody>
+      </table></div>
+      <p class="hint" id="weak-note" style="margin-top:10px;"></p>
+    </div>
+  </div>
+
+  <!-- Ce que les etudiants confondent EN LECTURE RADIOGRAPHIQUE. Le tableau ci-dessus compte
+       les cliches ; celui-ci compte les REPERES, et c'est lui qui dit quoi reprendre en cours :
+       « sept etudiants sur dix appellent la ceramo-metallique une couronne metallique » ne se
+       lit nulle part ailleurs. -->
+  <div class="card" id="radio-card">
+    <h2>Lecture radiographique — erreurs par type de repère</h2>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th>Repère</th><th>Rencontré</th><th>Erreurs</th><th>Taux d'erreur</th>
+        <th style="width:22%"></th>
+      </tr></thead>
+      <tbody id="radio-body"></tbody>
+    </table></div>
+    <p class="hint" id="radio-note" style="margin-top:10px;"></p>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var SUPABASE_URL = 'https://ujkpnlcbxzhwcftvxgcd.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_VafCKFLkoHnIk9gPkukwxQ_2vgqns7B';
+  var SESSION_KEY  = 'endodiag-session';
+
+  var session = null, profiles = [], results = [], caseResults = [];
+  // Les comptes retires de « profiles », conserves ici avec la raison de leur retrait : c'est ce
+  // qui permet de DIRE lesquels ne sont pas comptes, et de remettre dans les chiffres celui qu'on
+  // en a sorti par erreur.
+  var horsStats = [], raisonsHS = {};
+  // Ce que le serveur dit detenir mais que l'ecran n'a pas pu charger.
+  var manqueALAppel = [];
+
+  function $(id){ return document.getElementById(id); }
+  function show(el){ el.classList.remove('hidden'); }
+  function hide(el){ el.classList.add('hidden'); }
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+  function msg(id, text, kind){
+    $(id).innerHTML = text ? '<div class="msg ' + (kind||'info') + '">' + text + '</div>' : '';
+  }
+  function fmtDate(s){
+    if(!s) return '—';
+    var d = new Date(s);
+    return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
+  }
+  function fmtDateTime(s){
+    if(!s) return 'jamais';
+    var d = new Date(s);
+    return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit' }) +
+           ' à ' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  // Noms lisibles des pathologies (doivent correspondre aux identifiants de l'application)
+  // Les libelles des reperes radiographiques, recopies du catalogue de index.html. Cette
+  // duplication est deliberee : les deux fichiers sont autonomes et ne partagent rien. Elle est
+  // tenue par un controle de la suite back-office, qui relit les deux et refuse qu'ils divergent
+  // — sans quoi un repere renomme d'un cote s'afficherait sous son ancien nom de l'autre.
+  var RADIO_LABELS = {
+    couronne_cm: 'Couronne céramo-métallique',
+    bridge_cantilever: 'Bridge avec cantilever métallique',
+    osteite: 'Ostéite condensante',
+    inlay_core: 'Inlay-core à clavette',
+    inlay_core_simple: 'Inlay-core simple',
+    onlay: 'Onlay céramique / composite',
+    lesion: 'Lésion apicale infectieuse radioclaire (granulome, kyste ou abcès)',
+    parodontite: 'Lésion apicale débutante (parodontite apicale)',
+    debris: 'Débris radiculaire',
+    fragment: 'Fragment instrumental cassé',
+    amalgame: 'Amalgame dentaire',
+    amalgame_infiltre: 'Perte d\'étanchéité d\'une restauration',
+    rhizalyse: 'Rhizalyse radiculaire sur dent vivante',
+    screw_post: 'Screw post',
+    couronne_metal: 'Couronne métallique',
+    resorption_externe: 'Résorption externe',
+    resorption_interne: 'Résorption interne',
+    composite: 'Composite dentaire',
+    carie: 'Lésion carieuse',
+    calcification: 'Dent avec une calcification diffuse',
+    dent_16: 'Dent numéro 16',
+    dent_27: 'Dent numéro 27',
+    sinus: 'Sinus maxillaire',
+    couronne_transitoire: 'Couronne transitoire',
+    composite_fibre: 'Préparation coronaire en composite fibré',
+    dent_24: 'Dent numéro 24',
+    racine_palatine_26: 'Racine palatine de la dent 26',
+    email_46: 'Émail de la dent 46',
+    chambre_pulpaire_45: 'Chambre pulpaire de la dent 45',
+    chambre_pulpaire_36: 'Chambre pulpaire de la dent 36',
+    foramen_mentonnier: 'Foramen mentonnier',
+    obturation_canalaire: 'Obturation canalaire',
+    lesion_parodontale: 'Lésion parodontale verticale',
+    radix_entomolaris: 'Radix entomolaris',
+    implant: 'Implant dentaire',
+    racine_mesiale_17: 'Racine mésiale de la dent 17',
+    tuberosite: 'Tubérosité maxillaire',
+    nerf_alveolaire: 'Nerf alvéolaire inférieur',
+    email_25: 'Émail de la dent 25',
+    dent_28: 'Dent numéro 28',
+    cone_argent: 'Cône d\'argent',
+    racine_distale_26: 'Racine distale de la dent 26',
+    pulpolithe: 'Pulpolithe',
+  };
+
+  var DIAG_LABELS = {
+    saine:'Dent saine', hyperhemie:'Hyperhémie pulpaire', reversible:'Pulpite réversible',
+    irreversible:'Pulpite aiguë irréversible', syndrome_mixte:'Syndrome mixte',
+    necrose:'Nécrose pulpaire', parodontite:'Parodontite apicale aiguë',
+    abces_aigu:'Abcès apical aigu', abces_chronique:'Abcès apical chronique',
+    cellulite_sereuse:'Cellulite séreuse', cellulite_suppuree:'Cellulite suppurée',
+    cellulite_diffuse:'Cellulite diffuse'
+  };
+
+  // ---------- Qui est étudiant, qui ne l'est pas ----------
+  // Ce back-office suit une promotion. Mon propre compte n'en fait pas partie, et pas davantage
+  // ceux dont je me sers pour vérifier régulièrement que l'application fonctionne : chaque cas
+  // ouvert pour un essai comptait comme un cas travaillé. Il gonflait la « Vue d'ensemble »,
+  // s'affichait au milieu des étudiants, et surtout tirait les taux d'erreur par pathologie — on
+  // reprenait alors en cours autre chose que ce qui est réellement raté.
+  //
+  // Ces comptes sont donc écartés AVANT tout calcul : comptes, séries et cas joués. Rien n'est
+  // effacé en base — tout reste enregistré —, mais plus rien n'entre dans les chiffres de cet
+  // écran ni dans le classeur exporté.
+  //
+  // TROIS sources, parce qu'aucune ne suffit seule :
+  //   - la colonne « staff », posée depuis cet écran par le bouton « Hors stats ». C'est la seule
+  //     qui ne dépende pas de la façon dont un nom a été saisi, donc la seule sur laquelle on
+  //     puisse compter pour un compte dont l'orthographe exacte est inconnue : c'est celle à
+  //     utiliser ;
+  //   - la table « admins » du serveur, qui couvre d'office tout compte administrateur, le mien
+  //     comme celui d'un collègue qu'on y ajouterait ;
+  //   - les deux listes ci-dessous, qui gardent leur utilité tant que la colonne « staff »
+  //     n'existe pas en base : elles valent immédiatement, sans rien exécuter sur le serveur.
+  //
+  // Une adresse e-mail vaut mieux qu'un nom : elle ne se saisit qu'une fois, à l'inscription,
+  // alors qu'un nom peut l'être avec une faute — et une faute ferait manquer la correspondance en
+  // SILENCE, ce qui est le pire des cas : la promotion continuerait d'être comptée de travers
+  // sans que rien ne le signale.
+  var EMAILS_HORS_STATS = ['drbertrandmarion@gmail.com'];
+  var NOMS_HORS_STATS   = ['Marion Bertrand', 'Clément Rougemon', 'Thomas Parmentier'];
+
+  // La comparaison des noms ignore la casse, les accents, la ponctuation et l'ORDRE des mots :
+  // « Bertrand Marion » et « Marion Bertrand » désignent la même personne, et un prénom composé
+  // saisi avec ou sans trait d'union ne doit pas faire manquer la correspondance.
+  function cleNom(texte){
+    var s = String(texte == null ? '' : texte);
+    if(s.normalize) s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+            .split(' ').filter(function(m){ return m; }).sort().join(' ');
+  }
+  var CLES_HORS_STATS  = NOMS_HORS_STATS.map(cleNom);
+  var MAILS_HORS_STATS = EMAILS_HORS_STATS.map(function(e){ return e.trim().toLowerCase(); });
+
+  // Pourquoi ce compte n'est pas compté, ou null s'il l'est. La RAISON importe autant que le
+  // résultat : seule celle du bouton se défait depuis cet écran, et l'annoncer évite de chercher
+  // un bouton qui ne pourrait rien faire.
+  function raisonHorsStats(p, idsAdmin){
+    if(!p) return null;
+    if(idsAdmin && idsAdmin[p.id]) return 'admin';
+    var mail = String(p.email == null ? '' : p.email).trim().toLowerCase();
+    if(mail && MAILS_HORS_STATS.indexOf(mail) !== -1) return 'liste';
+    var k = cleNom((p.prenom || '') + ' ' + (p.nom || ''));
+    if(k && CLES_HORS_STATS.indexOf(k) !== -1) return 'liste';
+    if(p.staff) return 'bouton';
+    return null;
+  }
+
+  var RAISONS = {
+    admin:  'compte administrateur',
+    liste:  'nommé dans le code du back-office',
+    bouton: 'retiré depuis cet écran'
+  };
+
+  // ---------- réseau ----------
+  // Voir index.html : une connexion defaillante laisse la requete en suspens
+  // indefiniment plutot que d'echouer. Sans delai maximal, la page resterait
+  // bloquee sur « Chargement… ».
+  var REQUEST_TIMEOUT_MS = 12000;
+
+  function request(path, opts){
+    opts = opts || {};
+    var h = { 'apikey': SUPABASE_KEY, 'Content-Type':'application/json' };
+    if(opts.token)  h['Authorization'] = 'Bearer ' + opts.token;
+    if(opts.prefer) h['Prefer'] = opts.prefer;
+    if(opts.range)  h['Range'] = opts.range;
+    var ctrl  = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, REQUEST_TIMEOUT_MS) : null;
+    var clear = function(v){ if(timer) clearTimeout(timer); return v; };
+    return fetch(SUPABASE_URL + path, {
+      method: opts.method || 'GET', headers: h,
+      signal: ctrl ? ctrl.signal : undefined,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(clear, function(err){ clear(); throw err; }).then(function(res){
+      return res.text().then(function(t){
+        var d = null; try { d = t ? JSON.parse(t) : null; } catch(e){ d = t; }
+        if(!res.ok){
+          var e2 = new Error((d && (d.msg || d.message)) || ('Erreur ' + res.status));
+          e2.status = res.status; throw e2;
+        }
+        // « Content-Range: 0-999/4213 » : le total que le serveur dit detenir. C'est le seul
+        // moyen de savoir qu'une reponse a ete tronquee.
+        if(opts.compte && d && d.length !== undefined){
+          var cr = res.headers.get('content-range') || '';
+          var m = cr.match(/\/(\d+)$/);
+          d.totalServeur = m ? parseInt(m[1], 10) : null;
+        }
+        return d;
+      });
+    });
+  }
+  function authed(path, opts){
+    opts = opts || {}; opts.token = session.access_token;
+    return request(path, opts).catch(function(err){
+      if(err.status !== 401) throw err;
+      return request('/auth/v1/token?grant_type=refresh_token', {
+        method:'POST', body:{ refresh_token: session.refresh_token }
+      }).then(function(d){
+        session.access_token = d.access_token;
+        session.refresh_token = d.refresh_token;
+        session.user_id = d.user && d.user.id;
+        try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch(e){}
+        opts.token = session.access_token;
+        return request(path, opts);
+      });
+    });
+  }
+
+  // ---------- chargement ----------
+  // PostgREST borne le nombre de lignes qu'il renvoie — c'est le reglage « db-max-rows » du
+  // projet. Une requete sans pagination recevait donc ce que le serveur voulait bien donner,
+  // en silence : au-dela de la coupure, les cas les plus anciens disparaissaient, et un
+  // etudiant dont toute l'activite etait ancienne passait pour n'avoir jamais rien fait.
+  // On lit desormais par tranches jusqu'a avoir le compte que le serveur annonce lui-meme.
+  var TRANCHE = 1000;
+  function chargeTout(path){
+    var lignes = [], annonce = null;
+    function suite(debut){
+      return authed(path, { range: debut + '-' + (debut + TRANCHE - 1),
+                            prefer: 'count=exact', compte: true })
+        .then(function(lot){
+          lot = lot || [];
+          if(annonce === null) annonce = lot.totalServeur;
+          lignes = lignes.concat(lot);
+          // On ne s'arrete PAS sur « le lot est plus petit que demande » : le serveur impose sa
+          // propre taille de tranche, souvent bien inferieure a celle qu'on demande, et s'y fier
+          // ferait cesser la lecture des la premiere reponse. Le seul critere sur lequel on
+          // puisse compter est le total que le serveur annonce.
+          if(!lot.length) return lignes;
+          if(annonce !== null) {
+            if(lignes.length >= annonce) return lignes;
+          } else if(lot.length < TRANCHE) {
+            return lignes; // sans total annonce, on s'en tient a la regle classique
+          }
+          if(lignes.length > 200000) return lignes; // garde-fou
+          return suite(lignes.length);
+        });
+    }
+    return suite(0).then(function(l){
+      l.totalServeur = annonce;
+      return l;
+    });
+  }
+
+  function loadAll(){
+    return Promise.all([
+      chargeTout('/rest/v1/profiles?select=*&order=created_at.desc'),
+      chargeTout('/rest/v1/results?select=*&order=created_at.desc'),
+      // user_id et mode sont nécessaires pour ventiler les erreurs par promotion et distinguer
+      // ce qui est mal diagnostiqué de ce qui est mal traité.
+      chargeTout('/rest/v1/case_results?select=user_id,mode,diagnosis_id,correct,created_at&order=created_at.desc'),
+      // Les comptes administrateurs, pour les ecarter des chiffres de la promotion. La liste
+      // nominative couvrant deja les comptes connus, une table « admins » illisible ne doit pas
+      // empecher le back-office de s'ouvrir : on se rabat alors sur cette seule liste.
+      chargeTout('/rest/v1/admins?select=user_id').catch(function(){ return []; })
+    ]).then(function(r){
+      var tousProfils = r[0] || [], toutesSeries = r[1] || [], tousCas = r[2] || [];
+      // Si malgre la pagination le compte n'y est pas, il faut le DIRE : un back-office qui
+      // sous-rapporte sans le signaler fait conclure a l'inactivite d'un etudiant.
+      // Le controle porte sur ce que le SERVEUR a envoye, donc AVANT le tri des comptes
+      // enseignants : mesure apres, l'ecart qu'ils laissent passerait pour une reponse tronquee
+      // et la page crierait au chargement incomplet a chaque ouverture.
+      manqueALAppel = [
+        ['comptes', tousProfils], ['séries', toutesSeries], ['cas joués', tousCas]
+      ].filter(function(p){
+        return p[1].totalServeur !== null && p[1].totalServeur !== undefined
+            && p[1].length < p[1].totalServeur;
+      }).map(function(p){
+        return p[1].length + ' ' + p[0] + ' affichés sur ' + p[1].totalServeur + ' existants';
+      });
+
+      var idsAdmin = {};
+      (r[3] || []).forEach(function(a){ if(a && a.user_id) idsAdmin[a.user_id] = true; });
+      horsStats = []; raisonsHS = {};
+      var ecartes = {};
+      tousProfils.forEach(function(p){
+        var raison = raisonHorsStats(p, idsAdmin);
+        if(!raison) return;
+        ecartes[p.id] = true; raisonsHS[p.id] = raison; horsStats.push(p);
+      });
+
+      profiles = tousProfils.filter(function(p){ return !ecartes[p.id]; });
+      // Series et cas sont ecartes par leur auteur. Le filtre ne retient que les identifiants
+      // ecartes, plutot que de ne garder que « ce qui appartient a un etudiant connu » : un cas
+      // dont le profil manquerait a l'appel reste compte comme avant au lieu de disparaitre en
+      // silence, et c'est l'avertissement ci-dessus qui signale ce manque.
+      results     = toutesSeries.filter(function(x){ return !ecartes[x.user_id]; });
+      caseResults = tousCas.filter(function(x){ return !ecartes[x.user_id]; });
+      // Le tri est refait ici plutot que laisse au serveur. « Dernier cas », le panneau de detail
+      // et la feuille du classeur supposent tous un ordre decroissant : s'en remettre a la requete
+      // ferait dependre trois affichages d'un detail distant, et une date fausse ne se verrait pas.
+      caseResults.sort(function(a, b){
+        return (b.created_at || '').localeCompare(a.created_at || '');
+      });
+      render();
+    });
+  }
+
+  function render(){
+    var pending  = profiles.filter(function(p){ return !p.approved; });
+    var approved = profiles.filter(function(p){ return p.approved; });
+
+    // Vue d'ensemble
+    var active = approved.filter(function(p){
+      if(!p.last_seen_at) return false;
+      return (Date.now() - new Date(p.last_seen_at).getTime()) < 7*24*3600*1000;
+    }).length;
+    $('stats').innerHTML =
+      stat(pending.length, 'en attente') +
+      stat(approved.length, 'comptes validés') +
+      stat(active, 'actifs (7 jours)') +
+      stat(results.length, 'séries terminées') +
+      // Les deux modes comptés à part. Confondus, le total ne disait pas si une promotion
+      // travaille le diagnostic, le traitement, ou l'un au détriment de l'autre.
+      stat(caseResults.filter(function(c){ return modeLabel(c.mode) === 'Diagnostic'; }).length, 'cas diagnostic') +
+      stat(caseResults.filter(function(c){ return c.mode === 'therapeutique'; }).length, 'cas thérapeutique') +
+      stat(caseResults.filter(function(c){ return c.mode === 'radio'; }).length, 'lectures radio');
+
+    // Un chargement incomplet ne doit jamais passer pour de l'inactivite.
+    if(manqueALAppel.length){
+      msg('global-msg', 'Chargement incomplet : ' + manqueALAppel.join(' · ') +
+          '. Les chiffres ci-dessous sont donc SOUS-ESTIMES — rechargez la page.', 'err');
+    }
+
+    // En attente
+    $('pending-count').innerHTML = pending.length ? '<span class="tag tag-wait">' + pending.length + '</span>' : '';
+    $('pending-body').innerHTML = pending.length ? pending.map(function(p){
+      return '<tr>' +
+        '<td><b>' + esc(p.prenom) + ' ' + esc(p.nom) + '</b></td>' +
+        '<td>' + esc(p.annee) + '</td>' +
+        '<td>' + esc(p.faculte) + '</td>' +
+        '<td>' + esc(p.email) + '</td>' +
+        '<td>' + fmtDate(p.created_at) + '</td>' +
+        '<td><div class="actions">' +
+          '<button class="btn btn-ok" data-approve="' + esc(p.id) + '">Valider</button>' +
+          '<button class="btn btn-ko" data-delete="' + esc(p.id) + '">Supprimer</button>' +
+        '</div></td></tr>';
+    }).join('') : '<tr><td colspan="6"><div class="empty">Aucune inscription en attente.</div></td></tr>';
+
+    // Validés
+    $('approved-count').innerHTML = approved.length ? '<span class="tag tag-ok">' + approved.length + '</span>' : '';
+    $('approved-body').innerHTML = approved.length ? approved.map(function(p){
+      var mine = results.filter(function(r){ return r.user_id === p.id; });
+      // Chaque cas valide est enregistre, qu'il appartienne a une serie notee ou qu'il ait ete
+      // joue seul. Un etudiant qui travaille sans jamais terminer de serie restait invisible ici.
+      var mesCas = caseResults.filter(function(c){ return c.user_id === p.id; });
+      var moy = '—';
+      if(mine.length){
+        var tot = mine.reduce(function(a,r){ return a + (r.score / r.serie); }, 0);
+        moy = Math.round((tot / mine.length) * 100) + ' %';
+      }
+      return '<tr>' +
+        '<td><b>' + esc(p.prenom) + ' ' + esc(p.nom) + '</b><br><span style="font-size:0.76rem;color:var(--muted)">' + esc(p.email) + '</span></td>' +
+        '<td>' + esc(p.annee) + '</td>' +
+        '<td>' + esc(p.faculte) + '</td>' +
+        '<td>' + fmtDateTime(p.last_seen_at) + '</td>' +
+        '<td>' + mine.length + '</td>' +
+        // Un seul nombre melangeait les deux modes : on ne pouvait pas savoir si l'etudiant
+        // travaillait le diagnostic, le traitement, ou l'un sans l'autre.
+        '<td style="line-height:1.55">' + partCas('Diagnostic', mesCas, 'diagnostic')
+          + '<br>' + partCas('Thérapeutique', mesCas, 'therapeutique')
+          + '<br>' + partCas('Lecture radio', mesCas, 'radio') + '</td>' +
+        '<td>' + moy + '</td>' +
+        '<td><div class="actions">' +
+          '<button class="btn" data-detail="' + esc(p.id) + '">Résultats</button>' +
+          // Retirer des chiffres, sans rien effacer ni supprimer : c'est ce qu'il faut pour un
+          // compte d'essai, et c'est réversible depuis la carte « Comptes hors statistiques ».
+          '<button class="btn" data-staff="' + esc(p.id) + '" data-staff-on="0" ' +
+            'title="Ne plus compter ce compte dans les statistiques">⊘ Hors stats</button>' +
+          '<button class="btn btn-ko" data-delete="' + esc(p.id) + '">Supprimer</button>' +
+        '</div></td></tr>';
+    }).join('') : '<tr><td colspan="8"><div class="empty">Aucun compte validé pour le moment.</div></td></tr>';
+
+    // Ce qui est écarté doit se voir. Un chiffre qui baisse sans explication se lit comme une
+    // perte de données, et il faut pouvoir vérifier d'un coup d'œil QUI n'est pas compté — un
+    // étudiant homonyme d'un compte d'essai se repérerait ici, et nulle part ailleurs.
+    var pluriel = horsStats.length > 1;
+    $('staff-note').textContent = horsStats.length
+      ? horsStats.length + ' compte' + (pluriel ? 's' : '') + ' ' +
+        (pluriel ? 'sont écartés' : 'est écarté') + ' des statistiques (' +
+        horsStats.map(function(p){ return p.prenom + ' ' + p.nom; }).join(', ') + ') : ' +
+        'ni le compte, ni les séries, ni les cas joués n\'entrent dans les chiffres ci-dessus, ' +
+        'dans les tableaux ci-dessous, ni dans le classeur exporté. Détail juste en dessous.'
+      : '';
+
+    renderHorsStats();
+    renderPromoFilter();
+    renderWeak();
+    renderRadio();
+  }
+
+  // Les comptes sortis des chiffres : qui, pourquoi, et comment revenir en arrière. Seul le
+  // retrait fait depuis cet écran se défait ici ; les deux autres raisons se corrigent ailleurs,
+  // et le dire évite de chercher un bouton qui ne pourrait rien faire.
+  function renderHorsStats(){
+    var carte = $('hors-stats-card');
+    if(!horsStats.length){ hide(carte); $('hors-stats-body').innerHTML = ''; return; }
+    show(carte);
+    $('hors-stats-count').innerHTML = '<span class="tag tag-wait">' + horsStats.length + '</span>';
+    $('hors-stats-body').innerHTML = horsStats.map(function(p){
+      var raison = raisonsHS[p.id];
+      // Le bouton de retour tient dans la rangée d'actions ; l'explication, elle, passe EN DESSOUS
+      // et revient à la ligne. Laissée dans la rangée, dont la règle interdit la coupure, elle
+      // sortait de la carte et se lisait tronquée.
+      var retour = raison === 'bouton'
+        ? '<button class="btn btn-ok" data-staff="' + esc(p.id) + '" data-staff-on="1">' +
+          '↩ Remettre dans les stats</button>'
+        : '';
+      var explication = raison === 'bouton' ? ''
+        : '<div style="margin-top:6px;font-size:0.78rem;color:var(--muted);' +
+          'white-space:normal;max-width:34ch">' +
+          (raison === 'admin'
+            ? 'Retirez ce compte de la table « admins » pour le recompter.'
+            : 'Retirez son nom de la liste en tête de admin.html pour le recompter.') +
+          '</div>';
+      return '<tr>' +
+        '<td><b>' + esc(p.prenom) + ' ' + esc(p.nom) + '</b><br>' +
+          '<span style="font-size:0.76rem;color:var(--muted)">' + esc(p.email) + '</span></td>' +
+        '<td>' + esc(p.annee) + '</td>' +
+        '<td>' + fmtDateTime(p.last_seen_at) + '</td>' +
+        '<td>' + esc(RAISONS[raison] || raison) + '</td>' +
+        '<td><div class="actions">' +
+          retour +
+        '</div>' + explication + '</td></tr>';
+    }).join('');
+  }
+
+  // ---------- Pathologies les plus ratées, par promotion ----------
+  var TOUTES = '__toutes__';
+
+  function promoOf(userId){
+    var p = profiles.filter(function(x){ return x.id === userId; })[0];
+    return p ? p.annee : null;
+  }
+
+  function renderPromoFilter(){
+    var sel = $('promo-filter');
+    var choix = sel.value || TOUTES;
+    var promos = [];
+    profiles.forEach(function(p){
+      if(p.approved && p.annee && promos.indexOf(p.annee) === -1) promos.push(p.annee);
+    });
+    promos.sort();
+    sel.innerHTML = '<option value="' + TOUTES + '">Toutes les promotions</option>' +
+      promos.map(function(a){ return '<option value="' + esc(a) + '">' + esc(a) + '</option>'; }).join('');
+    // Conserve la promotion choisie si elle existe encore après un rechargement.
+    sel.value = promos.indexOf(choix) !== -1 ? choix : TOUTES;
+  }
+
+  // Lignes agrégées pour la promotion sélectionnée. Sert à la fois au tableau et à l'export :
+  // ce que l'enseignante exporte est exactement ce qu'elle a sous les yeux.
+  function weakRows(promoVoulue){
+    var promo = promoVoulue || $('promo-filter').value || TOUTES;
+    var byDiag = {};
+    caseResults.forEach(function(c){
+      // La lecture radiographique porte sur un cliché, pas sur une pathologie : l'inclure
+      // ferait apparaître des noms de fichiers dans le tableau des pathologies faibles.
+      if(c.mode === 'radio' || c.mode === 'radio_repere') return;
+      if(promo !== TOUTES && promoOf(c.user_id) !== promo) return;
+      var d = byDiag[c.diagnosis_id] ||
+              (byDiag[c.diagnosis_id] = { total:0, wrong:0, dTot:0, dErr:0, tTot:0, tErr:0 });
+      d.total++;
+      if(!c.correct) d.wrong++;
+      if(c.mode === 'therapeutique'){ d.tTot++; if(!c.correct) d.tErr++; }
+      else                          { d.dTot++; if(!c.correct) d.dErr++; }
+    });
+    return Object.keys(byDiag).map(function(k){
+      var d = byDiag[k];
+      return {
+        id:k, label: DIAG_LABELS[k] || k, total:d.total, rate: d.wrong / d.total,
+        dTot:d.dTot, dRate: d.dTot ? d.dErr / d.dTot : null,
+        tTot:d.tTot, tRate: d.tTot ? d.tErr / d.tTot : null
+      };
+    }).sort(function(a,b){ return b.rate - a.rate; });
+  }
+
+  function pct(r){ return r === null ? '—' : Math.round(r * 100) + ' %'; }
+
+  function renderWeak(){
+    var rows  = weakRows();
+    var promo = $('promo-filter').value || TOUTES;
+
+    $('weak-body').innerHTML = rows.length ? rows.map(function(r){
+      var p = Math.round(r.rate * 100);
+      return '<tr>' +
+        '<td>' + esc(r.label) + '</td>' +
+        '<td>' + r.total + '</td>' +
+        '<td>' + pct(r.dRate) + (r.dTot ? ' <span style="color:var(--muted)">(' + r.dTot + ')</span>' : '') + '</td>' +
+        '<td>' + pct(r.tRate) + (r.tTot ? ' <span style="color:var(--muted)">(' + r.tTot + ')</span>' : '') + '</td>' +
+        '<td><b>' + p + ' %</b></td>' +
+        '<td><div class="bar"><i style="width:' + p + '%"></i></div></td>' +
+        '</tr>';
+    }).join('')
+      : '<tr><td colspan="6"><div class="empty">Aucun cas traité' +
+        (promo === TOUTES ? '' : ' pour cette promotion') + ' pour le moment.</div></td></tr>';
+
+    // Un taux calculé sur trois cas ne veut rien dire : le rappeler évite de bâtir un cours
+    // sur un effectif qui n'en supporte pas la conclusion.
+    var faibles = rows.filter(function(r){ return r.total < 10; }).length;
+    $('weak-note').textContent = !rows.length ? ''
+      : faibles
+        ? faibles + ' pathologie' + (faibles > 1 ? 's ont' : ' a') + ' moins de 10 cas traités : ' +
+          'le taux d\'erreur y est encore peu significatif.'
+        : 'Toutes les pathologies comptent au moins 10 cas traités.';
+  }
+
+  // Les reperes radiographiques, classes par taux d'erreur. Laisser un leurre de cote compte
+  // comme une reussite : sinon le classement ne dirait rien des signes qu'on croit voir a tort,
+  // qui sont justement la moitie de ce qui s'apprend ici.
+  function radioRows(promoVoulue){
+    var promo = promoVoulue || $('promo-filter').value || TOUTES;
+    var par = {};
+    caseResults.forEach(function(c){
+      if(c.mode !== 'radio_repere') return;
+      if(promo !== TOUTES && promoOf(c.user_id) !== promo) return;
+      var d = par[c.diagnosis_id] || (par[c.diagnosis_id] = { total:0, wrong:0 });
+      d.total++;
+      if(!c.correct) d.wrong++;
+    });
+    return Object.keys(par).map(function(k){
+      return { id:k, label: RADIO_LABELS[k] || k, total: par[k].total,
+               wrong: par[k].wrong, rate: par[k].wrong / par[k].total };
+    }).sort(function(a, b){ return b.rate - a.rate || b.total - a.total; });
+  }
+
+  function renderRadio(){
+    var rows = radioRows();
+    var promo = $('promo-filter').value || TOUTES;
+    $('radio-body').innerHTML = rows.length ? rows.map(function(r){
+      var p = Math.round(r.rate * 100);
+      return '<tr>' +
+        '<td>' + esc(r.label) + '</td>' +
+        '<td>' + r.total + '</td>' +
+        '<td>' + r.wrong + '</td>' +
+        '<td><b>' + p + ' %</b></td>' +
+        '<td><div class="bar"><i style="width:' + p + '%"></i></div></td>' +
+        '</tr>';
+    }).join('')
+      : '<tr><td colspan="5"><div class="empty">Aucune lecture radiographique enregistrée' +
+        (promo === TOUTES ? '' : ' pour cette promotion') + ' pour le moment.</div></td></tr>';
+
+    var maigres = rows.filter(function(r){ return r.total < 10; }).length;
+    $('radio-note').textContent = !rows.length ? ''
+      : maigres
+        ? maigres + ' repère' + (maigres > 1 ? 's ont' : ' a') + ' été rencontré' +
+          (maigres > 1 ? 's' : '') + ' moins de 10 fois : le taux y est encore peu significatif.'
+        : 'Tous les repères ont été rencontrés au moins 10 fois.';
+  }
+
+  function stat(v, l){ return '<div class="stat"><div class="v">' + v + '</div><div class="l">' + l + '</div></div>'; }
+
+  // TROIS modes desormais. Tout ce qui n'etait pas « therapeutique » etait compte comme
+  // diagnostic : la lecture radiographique s'y serait fondue sans bruit, et les noms de
+  // cliches seraient apparus dans le tableau des pathologies.
+  // QUATRE valeurs desormais. Tout ce qui n'etait pas reconnu tombait dans « Diagnostic » :
+  // le detail repere par repere s'y serait fondu sans bruit et aurait multiplie par six le
+  // nombre de cas de diagnostic de chaque etudiant.
+  function modeLabel(m){
+    return m === 'radio' ? 'Lecture radiographique'
+         : m === 'radio_repere' ? 'Détail radiographique'
+         : m === 'therapeutique' ? 'Choix thérapeutique'
+         : 'Diagnostic';
+  }
+  // Un cas de lecture radiographique porte un nom de cliche, pas une pathologie.
+  function objetCas(c){
+    return c.mode === 'radio' ? ('Cliché ' + c.diagnosis_id)
+         : c.mode === 'radio_repere' ? (RADIO_LABELS[c.diagnosis_id] || c.diagnosis_id)
+         : (DIAG_LABELS[c.diagnosis_id] || c.diagnosis_id);
+  }
+
+  // Les cas d'un etudiant pour UN mode : leur nombre et leur taux de reussite. Un mode jamais
+  // joue s'affiche en gris plutot qu'en « 0 » — ne pas avoir commence et avoir tout rate sont
+  // deux situations differentes, et la premiere n'appelle pas la meme remarque que la seconde.
+  function partCas(nom, cas, mode){
+    var l = cas.filter(function(c){ return modeLabel(c.mode) === modeLabel(mode); });
+    if(!l.length) return '<span style="font-size:0.78rem;color:var(--muted)">' + nom + ' — aucun</span>';
+    var ok = l.filter(function(c){ return c.correct; }).length;
+    return '<span style="font-size:0.78rem;color:var(--muted)">' + nom + '</span> <b>' + l.length +
+           '</b> <span style="font-size:0.76rem;color:var(--muted)">(' +
+           Math.round(ok / l.length * 100) + ' %)</span>';
+  }
+
+  function showDetail(id){
+    var p = profiles.filter(function(x){ return x.id === id; })[0];
+    if(!p) return;
+    var mine = results.filter(function(r){ return r.user_id === id; });
+    $('detail-title').textContent = 'Résultats de ' + p.prenom + ' ' + p.nom;
+    $('detail-body').innerHTML = mine.length ? mine.map(function(r){
+      return '<tr><td>' + fmtDateTime(r.created_at) + '</td>' +
+        '<td>' + modeLabel(r.mode) + '</td>' +
+        '<td><b>' + r.score + ' / ' + r.serie + '</b></td></tr>';
+    }).join('') : '<tr><td colspan="3"><div class="empty">Aucune série terminée.</div></td></tr>';
+    // Les cas sont deja tries du plus recent au plus ancien par la requete.
+    var mesCas = caseResults.filter(function(c){ return c.user_id === id; });
+    var MAX_CAS = 100;
+    $('detail-cases-count').innerHTML = mesCas.length
+      ? '<span class="tag tag-ok">' + mesCas.length + '</span>' : '';
+    $('detail-cases-body').innerHTML = mesCas.length
+      ? mesCas.slice(0, MAX_CAS).map(function(c){
+          return '<tr><td>' + fmtDateTime(c.created_at) + '</td>' +
+            '<td>' + modeLabel(c.mode) + '</td>' +
+            '<td>' + esc(objetCas(c)) + '</td>' +
+            '<td>' + (c.correct ? '<span class="tag tag-ok">réussi</span>'
+                                : '<span class="tag tag-ko">raté</span>') + '</td></tr>';
+        }).join('')
+        + (mesCas.length > MAX_CAS
+           ? '<tr><td colspan="4"><div class="empty">… et ' + (mesCas.length - MAX_CAS)
+             + ' cas plus anciens. Le classeur Excel les contient tous.</div></td></tr>' : '')
+      : '<tr><td colspan="4"><div class="empty">Aucun cas joué.</div></td></tr>';
+
+    $('detail-card').style.display = '';
+    $('detail-card').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  // ---------- Écriture d'un classeur Excel, sans bibliothèque ----------
+  // Un fichier .xlsx est une archive ZIP contenant des fichiers XML. On l'assemble ici à la main
+  // pour ne pas introduire de dépendance externe : le back-office reste un fichier autonome.
+  // Les entrées sont stockées sans compression (méthode 0), ce qui évite d'implémenter DEFLATE ;
+  // les classeurs produits pèsent quelques dizaines de kilo-octets, c'est sans conséquence.
+  //
+  // Le CSV a été abandonné : selon la langue du tableur, le séparateur attendu est la virgule ou
+  // le point-virgule, et le mauvais choix entasse toute la ligne dans une seule colonne. Un vrai
+  // classeur ne laisse aucune place à cette ambiguïté.
+
+  var crcTable = null;
+  function crc32(bytes){
+    if(!crcTable){
+      crcTable = new Int32Array(256);
+      for(var n = 0; n < 256; n++){
+        var c = n;
+        for(var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        crcTable[n] = c;
+      }
+    }
+    var crc = -1;
+    for(var i = 0; i < bytes.length; i++) crc = (crc >>> 8) ^ crcTable[(crc ^ bytes[i]) & 0xFF];
+    return (crc ^ -1) >>> 0;
+  }
+
+  function zipBlob(files){
+    var enc = new TextEncoder(), parts = [], central = [], offset = 0;
+    files.forEach(function(f){
+      var name = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data);
+
+      var local = new Uint8Array(30 + name.length), lv = new DataView(local.buffer);
+      lv.setUint32(0, 0x04034b50, true);
+      lv.setUint16(4, 20, true);
+      lv.setUint16(6, 0x0800, true);   // noms de fichiers en UTF-8
+      lv.setUint16(8, 0, true);        // méthode 0 : stocké, sans compression
+      lv.setUint32(14, crc, true);
+      lv.setUint32(18, data.length, true);
+      lv.setUint32(22, data.length, true);
+      lv.setUint16(26, name.length, true);
+      local.set(name, 30);
+      parts.push(local, data);
+
+      var cen = new Uint8Array(46 + name.length), cv = new DataView(cen.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0x0800, true);
+      cv.setUint16(10, 0, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, data.length, true);
+      cv.setUint32(24, data.length, true);
+      cv.setUint16(28, name.length, true);
+      cv.setUint32(42, offset, true);
+      cen.set(name, 46);
+      central.push(cen);
+      offset += local.length + data.length;
+    });
+
+    var taille = central.reduce(function(a, c){ return a + c.length; }, 0);
+    var fin = new Uint8Array(22), fv = new DataView(fin.buffer);
+    fv.setUint32(0, 0x06054b50, true);
+    fv.setUint16(8,  files.length, true);
+    fv.setUint16(10, files.length, true);
+    fv.setUint32(12, taille, true);
+    fv.setUint32(16, offset, true);
+
+    return new Blob(parts.concat(central, [fin]),
+      { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  }
+
+  function xmlEsc(s){
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Styles disponibles dans les feuilles : indices dans <cellXfs> ci-dessous.
+  var ST = { normal:0, entete:1, pourcent:2, titre:3, date:4, dateheure:5, gras:6 };
+
+  function S(v, style){
+    return { v:(v === null || v === undefined) ? '' : String(v), t:'s', s:style || ST.normal };
+  }
+  function N(v, style){ return { v:v, t:'n', s:style || ST.normal }; }
+  // Une donnée absente laisse la cellule vide plutôt que d'y écrire un tiret : un texte dans une
+  // colonne de nombres ou de dates casserait le tri et le filtrage du tableur. Excel propose
+  // d'ailleurs « (Vides) » dans ses filtres, ce qui répond exactement à « qui ne s'est jamais
+  // connecté ? ».
+  function P(v){ return (v === null || v === undefined) ? S('') : { v:v, t:'n', s:ST.pourcent }; }
+  function H(v){ return S(v, ST.entete); }
+
+  // Excel compte les jours depuis le 30/12/1899. Écrire une vraie date plutôt qu'un texte permet
+  // de trier et de filtrer correctement dans le tableur.
+  function serial(iso){
+    if(!iso) return null;
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? null : d.getTime() / 86400000 + 25569;
+  }
+  function D(iso){ var s = serial(iso);  return s === null ? S('') : { v:s, t:'n', s:ST.date }; }
+  function DT(iso){ var s = serial(iso); return s === null ? S('') : { v:s, t:'n', s:ST.dateheure }; }
+
+  function colName(i){
+    var n = '';
+    i++;
+    while(i > 0){ var r = (i - 1) % 26; n = String.fromCharCode(65 + r) + n; i = (i - r - 1) / 26; }
+    return n;
+  }
+
+  function sheetXml(rows, largeurs, figer){
+    var body = rows.map(function(cells, ri){
+      var r = ri + 1;
+      return '<row r="' + r + '">' + cells.map(function(c, ci){
+        var ref = colName(ci) + r;
+        if(c.t === 'n' && c.v !== '' && c.v !== null && isFinite(c.v)){
+          return '<c r="' + ref + '" s="' + c.s + '"><v>' + c.v + '</v></c>';
+        }
+        if(c.v === '') return '<c r="' + ref + '" s="' + c.s + '"/>';
+        return '<c r="' + ref + '" s="' + c.s + '" t="inlineStr"><is><t xml:space="preserve">' +
+               xmlEsc(c.v) + '</t></is></c>';
+      }).join('') + '</row>';
+    }).join('');
+
+    var cols = (largeurs && largeurs.length)
+      ? '<cols>' + largeurs.map(function(w, i){
+          return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>';
+        }).join('') + '</cols>'
+      : '';
+
+    // L'étendue utilisée. Facultative pour la plupart des lecteurs, mais certains s'en servent pour
+    // dimensionner la feuille : la fournir coûte une ligne et évite une classe entière d'ennuis.
+    var largeurMax = rows.reduce(function(m, r){ return Math.max(m, r.length); }, 0);
+    var etendue = (rows.length && largeurMax)
+      ? '<dimension ref="A1:' + colName(largeurMax - 1) + rows.length + '"/>'
+      : '<dimension ref="A1"/>';
+
+    // L'ordre des éléments est imposé par le schéma : dimension, sheetViews, cols, sheetData,
+    // puis autoFilter.
+    var vue = figer
+      ? '<sheetViews><sheetView workbookViewId="0"><pane ySplit="' + figer + '" topLeftCell="A' +
+        (figer + 1) + '" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+      : '';
+    var filtre = (figer && rows.length > figer)
+      ? '<autoFilter ref="A' + figer + ':' + colName(rows[figer - 1].length - 1) + rows.length + '"/>'
+      : '';
+
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      etendue + vue + cols + '<sheetData>' + body + '</sheetData>' + filtre + '</worksheet>';
+  }
+
+  var STYLES_XML =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<numFmts count="2">' +
+      '<numFmt numFmtId="164" formatCode="dd/mm/yyyy"/>' +
+      '<numFmt numFmtId="165" formatCode="dd/mm/yyyy\\ hh:mm"/>' +
+    '</numFmts>' +
+    '<fonts count="4">' +
+      '<font><sz val="11"/><name val="Calibri"/></font>' +
+      '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>' +
+      '<font><b/><sz val="14"/><color rgb="FF182849"/><name val="Calibri"/></font>' +
+      '<font><b/><sz val="11"/><color rgb="FF182849"/><name val="Calibri"/></font>' +
+    '</fonts>' +
+    // Excel impose que les deux premiers remplissages soient « none » puis « gray125 ».
+    '<fills count="3">' +
+      '<fill><patternFill patternType="none"/></fill>' +
+      '<fill><patternFill patternType="gray125"/></fill>' +
+      '<fill><patternFill patternType="solid"><fgColor rgb="FF182849"/>' +
+        '<bgColor indexed="64"/></patternFill></fill>' +
+    '</fills>' +
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="7">' +
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+      '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"' +
+        ' applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>' +
+      '<xf numFmtId="9" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+      '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+      '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+      '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+      '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+    '</cellXfs>' +
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+    '</styleSheet>';
+
+  function buildWorkbook(feuilles){
+    var C = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    var fichiers = [
+      { name:'[Content_Types].xml', text:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-' +
+          'officedocument.spreadsheetml.sheet.main+xml"/>' +
+        feuilles.map(function(f, i){
+          return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType=' +
+                 '"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+        }).join('') +
+        '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-' +
+          'officedocument.spreadsheetml.styles+xml"/>' +
+        '</Types>' },
+      { name:'_rels/.rels', text:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="' + C + '/officeDocument" Target="xl/workbook.xml"/>' +
+        '</Relationships>' },
+      { name:'xl/workbook.xml', text:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="' +
+          C + '"><sheets>' +
+        feuilles.map(function(f, i){
+          return '<sheet name="' + xmlEsc(f.nom) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>';
+        }).join('') + '</sheets></workbook>' },
+      { name:'xl/_rels/workbook.xml.rels', text:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        feuilles.map(function(f, i){
+          return '<Relationship Id="rId' + (i + 1) + '" Type="' + C +
+                 '/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>';
+        }).join('') +
+        '<Relationship Id="rId' + (feuilles.length + 1) + '" Type="' + C +
+          '/styles" Target="styles.xml"/>' +
+        '</Relationships>' },
+      { name:'xl/styles.xml', text: STYLES_XML }
+    ];
+    feuilles.forEach(function(f, i){
+      fichiers.push({ name:'xl/worksheets/sheet' + (i + 1) + '.xml',
+                      text: sheetXml(f.rows, f.largeurs, f.figer) });
+    });
+    return zipBlob(fichiers);
+  }
+
+  function telecharger(blob, nom){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = nom;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function stamp(){ return new Date().toISOString().slice(0, 10); }
+
+  // ---------- Le classeur EndoDiag ----------
+  function moyenneDe(liste){
+    if(!liste.length) return null;
+    return liste.reduce(function(a, r){ return a + r.score / r.serie; }, 0) / liste.length;
+  }
+
+  function promosApprouvees(){
+    var out = [];
+    profiles.forEach(function(p){
+      if(p.approved && p.annee && out.indexOf(p.annee) === -1) out.push(p.annee);
+    });
+    return out.sort();
+  }
+
+  function feuilleSynthese(){
+    var approved = profiles.filter(function(p){ return p.approved; });
+    var pending  = profiles.filter(function(p){ return !p.approved; });
+    var actifs   = approved.filter(function(p){
+      return p.last_seen_at && (Date.now() - new Date(p.last_seen_at).getTime()) < 7*24*3600*1000;
+    });
+
+    var rows = [
+      [S('EndoDiag — synthèse', ST.titre)],
+      [S('Export du', ST.gras), DT(new Date().toISOString())],
+      [],
+      [S('Comptes validés', ST.gras),    N(approved.length)],
+      [S('Comptes en attente', ST.gras), N(pending.length)],
+      [S('Actifs sur 7 jours', ST.gras), N(actifs.length)],
+      [S('Séries terminées', ST.gras),   N(results.length)],
+      [S('Cas joués', ST.gras),          N(caseResults.length)],
+      [],
+      [S('Par promotion', ST.titre)],
+      [H('Promotion'), H('Étudiants validés'), H('Séries terminées'), H('Moyenne'), H('Cas traités')]
+    ];
+    promosApprouvees().forEach(function(promo){
+      var ids = approved.filter(function(p){ return p.annee === promo; }).map(function(p){ return p.id; });
+      var rs  = results.filter(function(r){ return ids.indexOf(r.user_id) !== -1; });
+      var cs  = caseResults.filter(function(c){ return ids.indexOf(c.user_id) !== -1; });
+      rows.push([S(promo), N(ids.length), N(rs.length), P(moyenneDe(rs)), N(cs.length)]);
+    });
+
+    rows.push([]);
+    rows.push([S('Pathologies — toutes promotions confondues', ST.titre)]);
+    rows.push([H('Pathologie'), H('Cas traités'), H('Erreurs diagnostic'), H('Cas diagnostic'),
+               H('Erreurs traitement'), H('Cas traitement'), H('Taux d\'erreur global')]);
+    weakRows(TOUTES).forEach(function(r){
+      rows.push([S(r.label), N(r.total), P(r.dRate), N(r.dTot), P(r.tRate), N(r.tTot), P(r.rate)]);
+    });
+
+    return { nom:'Synthèse', rows:rows, largeurs:[34, 17, 17, 12, 17, 15, 19] };
+  }
+
+  function feuilleEtudiants(){
+    var rows = [[H('Nom'), H('Prénom'), H('E-mail'), H('Promotion'), H('Faculté'),
+                 H('Inscrit le'), H('Dernière connexion'), H('Séries'), H('Moyenne'),
+                 H('Cas joués'), H('Cas réussis'), H('Dernier cas')]];
+    profiles.filter(function(p){ return p.approved; }).slice()
+      .sort(function(a, b){
+        return (a.annee || '').localeCompare(b.annee || '') ||
+               (a.nom   || '').localeCompare(b.nom   || '');
+      })
+      .forEach(function(p){
+        var mine = results.filter(function(r){ return r.user_id === p.id; });
+        var cas  = caseResults.filter(function(c){ return c.user_id === p.id; });
+        var reussis = cas.filter(function(c){ return c.correct; }).length;
+        rows.push([S(p.nom), S(p.prenom), S(p.email), S(p.annee), S(p.faculte),
+                   D(p.created_at), DT(p.last_seen_at), N(mine.length), P(moyenneDe(mine)),
+                   N(cas.length), cas.length ? P(reussis / cas.length) : S(''),
+                   cas.length ? DT(cas[0].created_at) : S('')]);
+      });
+    return { nom:'Étudiants', rows:rows,
+             largeurs:[20, 16, 30, 16, 26, 13, 19, 9, 11, 11, 12, 19], figer:1 };
+  }
+
+  // Un cas par ligne, du plus recent au plus ancien. C'est la seule vue qui montre QUAND un
+  // etudiant s'est entraine : les series ne disent rien de celui qui travaille sans en terminer.
+  // L'ecran du back-office n'en affiche que les cent derniers par etudiant ; cette feuille les
+  // contient tous, et c'est elle que le panneau de detail annonce.
+  function feuilleCas(){
+    var parId = {};
+    profiles.forEach(function(p){ parId[p.id] = p; });
+    var rows = [[H('Date'), H('Nom'), H('Prénom'), H('Promotion'), H('Mode'),
+                 H('Pathologie ou cliché'), H('Résultat')]];
+    caseResults.forEach(function(c){
+      var p = parId[c.user_id];
+      if(!p || !p.approved) return;
+      rows.push([DT(c.created_at), S(p.nom), S(p.prenom), S(p.annee),
+                 S(modeLabel(c.mode)),
+                 S(objetCas(c)),
+                 S(c.correct ? 'Réussi' : 'Raté')]);
+    });
+    return { nom:'Cas joués', rows:rows, largeurs:[19, 20, 16, 16, 20, 30, 10], figer:1 };
+  }
+
+  function feuillePathologies(){
+    var rows = [[H('Promotion'), H('Pathologie'), H('Cas traités'), H('Erreurs diagnostic'),
+                 H('Cas diagnostic'), H('Erreurs traitement'), H('Cas traitement'),
+                 H('Taux d\'erreur global')]];
+    // Uniquement le détail par promotion : le total toutes promotions figure sur la Synthèse.
+    // Mélanger les deux dans un même tableau exposerait à additionner deux fois les mêmes cas.
+    promosApprouvees().forEach(function(promo){
+      weakRows(promo).forEach(function(r){
+        rows.push([S(promo), S(r.label), N(r.total), P(r.dRate), N(r.dTot),
+                   P(r.tRate), N(r.tTot), P(r.rate)]);
+      });
+    });
+    return { nom:'Pathologies par promotion', rows:rows,
+             largeurs:[16, 34, 13, 18, 15, 19, 16, 19], figer:1 };
+  }
+
+  function exportWorkbook(){
+    if(!profiles.filter(function(p){ return p.approved; }).length){
+      msg('global-msg', 'Rien à exporter : aucun compte validé.', 'err');
+      return;
+    }
+    try {
+      telecharger(buildWorkbook([feuilleSynthese(), feuilleEtudiants(), feuilleCas(), feuillePathologies()]),
+                  'endodiag-' + stamp() + '.xlsx');
+      msg('global-msg', 'Classeur exporté : quatre feuilles — Synthèse, Étudiants, ' +
+                        'Cas joués, Pathologies par promotion.', 'ok');
+    } catch(e){
+      msg('global-msg', 'Échec de l\'export : ' + esc(e.message), 'err');
+    }
+  }
+
+  // ---------- actions ----------
+  document.addEventListener('change', function(e){
+    if(e.target && e.target.id === 'promo-filter'){ renderWeak(); renderRadio(); }
+  });
+
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if(!t || t.tagName !== 'BUTTON') return;
+
+    var id;
+    if((id = t.getAttribute('data-approve'))){
+      t.disabled = true; t.textContent = '…';
+      authed('/rest/v1/profiles?id=eq.' + id, {
+        method:'PATCH', body:{ approved:true }, prefer:'return=minimal'
+      }).then(loadAll)
+        .then(function(){ msg('global-msg', 'Compte validé. L\'étudiant a désormais accès aux cas cliniques.', 'ok'); })
+        .catch(function(err){ msg('global-msg', 'Échec de la validation : ' + esc(err.message), 'err'); t.disabled = false; t.textContent = 'Valider'; });
+    }
+    else if((id = t.getAttribute('data-staff'))){
+      // Retirer ou remettre un compte dans les statistiques. Rien n'est efface : seules les
+      // sommes changent, et le compte reapparait dans les chiffres si on le remet.
+      var sort = t.getAttribute('data-staff-on') !== '1';
+      var q2 = profiles.filter(function(x){ return x.id === id; })[0] ||
+               horsStats.filter(function(x){ return x.id === id; })[0];
+      var nom2 = q2 ? (q2.prenom + ' ' + q2.nom) : 'ce compte';
+      t.disabled = true; t.textContent = '…';
+      authed('/rest/v1/profiles?id=eq.' + id, {
+        method:'PATCH', body:{ staff: sort }, prefer:'return=minimal'
+      }).then(loadAll)
+        .then(function(){
+          msg('global-msg', sort
+            ? esc(nom2) + ' ne compte plus dans les statistiques. Ses séries et ses cas restent '
+              + 'enregistrés : le remettre les fera tous réapparaître.'
+            : esc(nom2) + ' compte de nouveau dans les statistiques, avec tout son passé.', 'ok');
+        })
+        .catch(function(err){
+          // La colonne peut ne pas exister : le script supabase/schema.sql est a reexecuter.
+          // Le dire ici plutot que laisser un bouton qui echoue sans expliquer pourquoi.
+          msg('global-msg', 'Échec : ' + esc(err.message) +
+              ' — la colonne « staff » existe-t-elle sur la table profiles ? ' +
+              'Si non, réexécutez <code>supabase/schema.sql</code> dans Supabase ; ' +
+              'elle y est créée sans toucher aux données existantes.', 'err');
+          t.disabled = false; t.textContent = sort ? '⊘ Hors stats' : '↩ Remettre dans les stats';
+        });
+    }
+    else if((id = t.getAttribute('data-delete'))){
+      var p = profiles.filter(function(x){ return x.id === id; })[0];
+      var who = p ? (p.prenom + ' ' + p.nom + ' (' + p.email + ')') : 'ce compte';
+      if(!confirm('Supprimer définitivement le profil de ' + who + ' ?\n\nSes résultats seront également effacés. Cette action est irréversible.')) return;
+      t.disabled = true; t.textContent = '…';
+      authed('/rest/v1/profiles?id=eq.' + id, { method:'DELETE', prefer:'return=minimal' })
+        .then(loadAll)
+        .then(function(){ msg('global-msg', 'Profil supprimé.', 'ok'); })
+        .catch(function(err){ msg('global-msg', 'Échec de la suppression : ' + esc(err.message), 'err'); t.disabled = false; t.textContent = 'Supprimer'; });
+    }
+    else if((id = t.getAttribute('data-detail'))){
+      showDetail(id);
+    }
+    else if(t.id === 'export-btn') { exportWorkbook(); }
+  });
+
+  function doLogin(){
+    var email = ($('email').value || '').trim(), pass = $('password').value || '';
+    if(!email || !pass){ msg('login-msg', 'Renseignez vos identifiants.', 'err'); return; }
+    msg('login-msg', '');
+    $('login-btn').disabled = true; $('login-btn').textContent = 'Connexion…';
+    request('/auth/v1/token?grant_type=password', { method:'POST', body:{ email:email, password:pass } })
+      .then(function(d){
+        session = {
+          access_token:d.access_token, refresh_token:d.refresh_token,
+          user_id: d.user && d.user.id, email: d.user && d.user.email
+        };
+        try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch(e){}
+        return start();
+      })
+      .catch(function(err){
+        var m = String(err.message || '');
+        msg('login-msg', /Invalid login credentials/i.test(m) ? 'Adresse e-mail ou mot de passe incorrect.'
+          : /Email not confirmed/i.test(m) ? 'Confirmez d\'abord votre adresse e-mail.'
+          : (m || 'Erreur de connexion.'), 'err');
+      })
+      .then(function(){ $('login-btn').disabled = false; $('login-btn').textContent = 'Se connecter'; });
+  }
+
+  $('login-btn').addEventListener('click', doLogin);
+  ['email','password'].forEach(function(id){
+    $(id).addEventListener('keydown', function(e){ if(e.key === 'Enter') doLogin(); });
+  });
+
+  // ---------- démarrage ----------
+  function start(){
+    if(!session){ hide($('loading-view')); show($('login-view')); return Promise.resolve(); }
+    show($('loading-view')); hide($('login-view')); hide($('admin-view'));
+    // Vérifie que ce compte est bien administrateur avant d'afficher quoi que ce soit.
+    return authed('/rest/v1/admins?select=user_id&user_id=eq.' + session.user_id)
+      .then(function(rows){
+        if(!rows || !rows.length){
+          hide($('loading-view')); show($('login-view'));
+          msg('login-msg',
+            'Ce compte n\'est pas administrateur. Exécutez la commande d\'activation ' +
+            'indiquée dans <code>supabase/README.md</code>, puis reconnectez-vous.', 'err');
+          return;
+        }
+        return loadAll().then(function(){
+          hide($('loading-view')); hide($('login-view')); show($('admin-view'));
+        });
+      })
+      .catch(function(err){
+        hide($('loading-view')); show($('login-view'));
+        msg('login-msg', err.status ? ('Erreur : ' + esc(err.message))
+                                    : 'Serveur injoignable. Vérifiez votre connexion internet.', 'err');
+      });
+  }
+
+  try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch(e){ session = null; }
+  start();
+})();
+</script>
+</body>
+</html>
